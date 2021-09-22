@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <title>POC</title>
+    </head>
+<script>	
+var ShaderHeaderAddition;
+var mShaderHeaderLines = [0,0];	
+
+var added_lines 			= 	0;
+var newMode 				=	1;	
+ShaderHeaderAddition 		= 	"";
+ShaderHeaderAdditionLines 	= 	0;
+
+var mDerivatives			=	0;
+var mShaderTextureLOD 		= 	0;
+	
+if (newMode)
+{
+	mDerivatives			=	1;
+	mShaderTextureLOD 		= 	1;	
+}
+	
+if( mDerivatives ) { ShaderHeaderAddition += "#ifdef GL_OES_standard_derivatives\n#extension GL_OES_standard_derivatives : enable\n#endif\n"; ShaderHeaderAdditionLines+=3; }
+if( mShaderTextureLOD  ) { ShaderHeaderAddition += "#extension GL_EXT_shader_texture_lod : enable\n"; ShaderHeaderAdditionLines++; }
+ShaderHeaderAddition += "#ifdef GL_ES\n"+
+										"precision highp float;\n"+
+										"precision highp int;\n"+
+										"#endif\n";
+					ShaderHeaderAdditionLines += 4;		
+	
+var sheader_end = "\n\nvoid main() { mainImage(gl_FragColor.xyzw, gl_FragCoord.xy); } ";
+var new_vertex_shader = "";
+				
+if (newMode)
+{
+	ShaderHeaderAddition = "#version 300 es\n"+
+											"#ifdef GL_ES\n"+
+											"precision highp float;\n"+
+											"precision highp int;\n"+
+											"precision mediump sampler3D;\n"+
+											"#endif\n"; 
+	ShaderHeaderAdditionLines = 6;
+												
+	sheader_end 	=	"\nout vec4 outColor;\n" + 
+						"\nvoid main( void )\n" +
+						"{" +
+						"vec4 color = vec4(0.0,0.0,0.0,1.0);" +
+						"mainImage( color, gl_FragCoord.xy );" + 
+						"outColor = color; }";
+
+	new_vertex_shader =    "#version 300 es\n"+
+							"layout(location = 0) in vec2 position; void main() { gl_Position = vec4(position.xy,0.0,1.0); }";
+}
+	
+var sheader = "";
+sheader += "";		
+
+function CalcErrLine(ErrorLine)
+{
+	return 0;
+}	
+		
+var ShaderStuff = function () {
+    if (window.WebGLRenderingContext) {
+        this.init();
+    } else {
+        console.error('You need a WebGL browser: Try get.webgl.org');
+    }
+};
+
+ShaderStuff.prototype = {
+    constructor: ShaderStuff.prototype,
+    mouse: new Float32Array(2),
+    textures: [],
+    width: 320,
+    height: 240,
+    _ready: false,
+    _pause: false,
+	
+	_VS:0,
+	_FS: 0,
+	_PROGRAM: 0,
+	_CANVAS: 0,
+
+    _vertexShader: [
+        'attribute vec2 position;',
+        'void main() {',
+        '   gl_Position = vec4( position, 0.0, 1.0 );',
+        '}'],
+	
+    _fragmentShader: [
+        'void mainImage( out vec4 fragColor, in vec2 fragCoord ) { fragColor.rgb = vec3( 0.5 + 0.5 * cos( iGlobalTime ) ); }',
+
+        'void main() {',
+        '   vec4 color = vec4( 0.0, 0.0, 0.0, 1.0 );',
+        '   mainImage( color, gl_FragCoord.xy );',
+        '   gl_FragColor = color;',
+        '}'],
+
+    _createProgram: function (vertexShader, fragmentShader) {
+        var vs = this._createShader(vertexShader, this.gl.VERTEX_SHADER);
+        var fs = this._createShader(fragmentShader, this.gl.FRAGMENT_SHADER);
+		
+        var program = this.gl.createProgram();
+        this.gl.attachShader(program, vs);
+        this.gl.attachShader(program, fs);
+        this.gl.linkProgram(program);
+
+		this._VS = vs;
+		this._FS = fs;
+		this._PROGRAM = program;
+
+        return program;
+    },
+
+    _createShader: function (str, type) {
+        var shader = this.gl.createShader(type);
+        this.gl.shaderSource(shader, str);
+        this.gl.compileShader(shader);
+
+        var compiled = this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS);
+
+        if (!compiled) {
+			console.error('Error compiling shader');
+            this.gl.deleteShader(shader);
+            return null;
+        }
+        return shader;
+    },
+
+    _createTexture: function (index) {
+        this.gl.activeTexture(this.gl.TEXTURE0 + (index));
+        var texture = this.gl.createTexture();
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([0, 255, 255, 255]));
+        return texture;
+    },
+
+    _updateTexture: function (buf, index) {
+        if (this.textures[index]) {
+            this.gl.deleteTexture(this.textures[index]);
+            delete this.textures[index];
+
+            this._updateTexture(buf, index);
+        } else {
+            this.textures[index] = this._createTexture(index);
+            this.gl.activeTexture(this.gl.TEXTURE0 + (index));
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textures[index]);
+            this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, buf);
+            if (this._isPowerOf2(buf.width) && this._isPowerOf2(buf.height)) {
+                this.gl.generateMipmap(this.gl.TEXTURE_2D);
+            } else {
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+            }
+        }
+    },
+
+    _getAttribute: function (name) {
+        if (!this.program.atttributes) {
+            this.program.atttributes = {};
+        }
+
+        if (!this.program.atttributes[name]) {
+            this.program.atttributes[name] = this.gl.getAttribLocation(this.program, name);
+        }
+        return this.program.atttributes[name];
+    },
+
+    _isPowerOf2: function (value) {
+        return (value & (value - 1)) === 0;
+    },
+
+    init: function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = this.width;
+        canvas.height = this.height;
+        document.body.appendChild(canvas);
+		
+		this._CANVAS = canvas;
+
+		if (newMode)
+			this.gl = canvas.getContext('webgl2');
+		else
+			this.gl = canvas.getContext('webgl');
+		
+		if (!this.gl)
+		{
+			console.log("### USING OLD WEBGL MODE###");
+			newMode = 0;
+			this.gl = canvas.getContext('webgl');
+		}			
+
+        if (!this.gl) {
+            console.error('Couldn\'t start WebGL ');
+        }
+	
+		try
+		{
+			this.gl.getExtension('OES_texture_float');
+			this.gl.getExtension('OES_standard_derivatives');
+			this.gl.getExtension('OES_float_linear');
+			this.gl.getExtension('OES_half_float_linear');
+
+		} catch(e) { }
+        var quad = new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]);
+        var buffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, quad, this.gl.STATIC_DRAW);
+    },
+
+    loadFragmentFromBuff: function (buff) {
+        this._ready = false;
+        this.writeFragment2(buff);
+    },	
+
+    loadImage: function (url, index) {
+        var self = this;
+		this.index = index;
+		
+        var image = new Image();
+        image.src = url;
+        image.index = index || 0;
+        image.onload = function () {
+            self._updateTexture(image, this.index);
+        };
+    },
+
+    writeFragment: function (str) {
+        this._ready = false;
+		
+        this._fragmentShader[8] = str;
+        var program = this._createProgram(this._vertexShader.join('\n'), this._fragmentShader.join('\n'));
+        this.useProgram(program);
+    },
+
+    writeFragment2: function (str) {
+        this._ready = false;
+        var channels = "";
+        var add_lines 	= ShaderHeaderAddition + sheader + channels;
+        added_lines 	= add_lines.split(/\r\n|\r|\n/).length;
+        var fragment_shader =  ShaderHeaderAddition + sheader + channels + str + sheader_end;
+        if (newMode)
+            var program = this._createProgram(new_vertex_shader, fragment_shader);
+        else
+            var program = this._createProgram(this._vertexShader.join('\n'), fragment_shader);
+        this.useProgram(program);
+    },	
+	
+    useProgram: function (program) {
+        this.program = program;
+        this.gl.useProgram(this.program);
+
+        this.gl.enableVertexAttribArray(this._getAttribute('position'));
+        this.gl.vertexAttribPointer(this._getAttribute('position'), 2, this.gl.FLOAT, false, 0, 0);
+
+        this.startTime = Date.now();
+        this._ready = true;
+    },
+};
+</script>
+
+<script>
+let shader_data =  `void mainImage ( out vec4 f, in vec2 df ) {  f += 0.1; }`;
+var ImageData2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAAAAADhZOFXAAAACXBIWXMAAAsTAAALEwEAmpwYAAAABGdBTUEAALGOfPtRkwAAACBjSFJNAAB6JQAAgIMAAPn/AACA6QAAdTAAAOpgAAA6mAAAF2+SX8VGAAAAZ0lEQVR42mJgaFBbINChuwIggBj2Oz1IOOH1MgMggBiMN4j3W+2QmwEQQAwf8y8E/iy/EQEQQEzKMvFRgryB3gABxHDG9232EbenKQABxGC/R3G2+WbpyQABxPCv+k7M15IroQABBgAZ8B60eaEoLgAAAABJRU5ErkJggg==";
+var renderer;
+var run_shader = true;
+var canvas_elem = false;
+var img = false;
+function init() {
+    // init functions
+    renderer = new ShaderStuff();
+    canvas_elem = renderer._CANVAS;
+    renderer.loadImage(ImageData2, 0);
+    renderer.loadFragmentFromBuff(shader_data);
+        
+    //debugger;
+    update();
+}
+// everything above are init functions and helpers
+//
+// bug triggering function 
+//
+function update() {
+    // trigger function		
+    var gl1 = renderer.gl;				
+    var buffer2 = gl1.createBuffer(); 
+    gl1.bindBuffer(gl1.ARRAY_BUFFER, buffer2); 
+
+    gl1.drawArrays(gl1.LINES, 0, 4);
+    
+    var pixels = new Uint8Array(gl1.drawingBufferWidth * gl1.drawingBufferHeight * 4);  
+    gl1.texImage2D(gl1.TEXTURE_2D , 0 , 0x1 , 0x1 , 1 , 1 , gl1.DRAW_BUFFER1 , gl1.BYTE , pixels  ); 
+
+    // seems to trigger only when first param is (-1, 1) 
+    gl1.vertexAttribPointer(-0.9, 4, gl1.UNSIGNED_BYTE, false, 1, 255); 
+    gl1.drawArrays(gl1.TRIANGLES, 0, 6);
+    
+    // recurisivty needed 
+    update();
+}           
+</script>
+<body onload="init();"></body>
+</html>
