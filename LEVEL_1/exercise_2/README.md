@@ -1,13 +1,18 @@
 # Exercise 2
 
 ## CVE-2020-6542
-I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in true, Poc can proof that we are right.
+I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
 
-In order to reduce the difficulty of setting up the environment, we do it by code auditing.
+This time we do it by code audit, and download source code.
+### Details
 
-## Details
 
-> Use-After-Free vulnerability in libglesv2!gl::Texture::onUnbindAsSamplerTexture
+> When a new texture is bound, the texture binding state is updated before
+> updating the active texture cache. With this ordering, it is possible to delete
+> the currently bound texture when the binding changes and then use-after-free it
+> when updating the active texture cache.
+>
+> The bug reason in angle/src/libANGLE/State.cpp
 
 ---------
 
@@ -19,119 +24,80 @@ In order to reduce the difficulty of setting up the environment, we do it by cod
 
 --------
 
-### Tested Versions
+### Set environment
+We download the ANGLE
+```sh
+git clone https://chromium.googlesource.com/angle/angle
+```
+Then checkout the branch, we set the commit hash
+```sh
+cd angle
+git  reset --hard b83b0f5e9f63261d3d95a75b74ad758509d7a349 # we get it by issue page
+```
 
-Google Chrome 83.0.4093.3 dev (64 bit)
-
-
-### related code
-\src\third_party\angle\src\libANGLE\Texture.h
-we can analysis the source file [online](https://chromium.googlesource.com/angle/angle/+/50a2725742948702720232ba46be3c1f03822ada/src/libANGLE/renderer/d3d/d3d11/Buffer11.cpp#801)
-
+### Related code
+we can analysis the source file [online](https://chromium.googlesource.com/angle/angle/+/e514b0cb7e6b8956ea0c93ceca01b63d5deb621d/src/libANGLE/State.cpp#1171) or offline.
 
 
 ```c++
-Buffer11::Buffer11(const gl::BufferState &state, Renderer11 *renderer)
-    : BufferD3D(state, renderer),
-      mRenderer(renderer),
-      mSize(0),
-      mMappedStorage(nullptr),
-      mBufferStorages({}),   // empty
-      mLatestBufferStorage(nullptr),
-      mDeallocThresholds({}),
-      mIdleness({}),
-      mConstantBufferStorageAdditionalSize(0),
-      mMaxConstantBufferLruCount(0),
-      mStructuredBufferStorageAdditionalSize(0),
-      mMaxStructuredBufferLruCount(0)
-{}
-Buffer11::~Buffer11()
+void State::setSamplerTexture(const Context *context, TextureType type, Texture *texture)
 {
-    for (BufferStorage *&storage : mBufferStorages) //A way of interval iteration, like python
+    mSamplerTextures[type][mActiveSampler].set(context, texture);
+    if (mProgram && mProgram->getActiveSamplersMask()[mActiveSampler] &&
+        IsTextureCompatibleWithSampler(type, mProgram->getActiveSamplerTypes()[mActiveSampler]))
     {
-        SafeDelete(storage);
+        updateActiveTexture(context, mActiveSampler, texture);
     }
-[ .... ]
-template <typename StorageOutT>
-angle::Result Buffer11::getBufferStorage(const gl::Context *context,
-                                         BufferUsage usage,
-                                         StorageOutT **storageOut)
+    mDirtyBits.set(DIRTY_BIT_TEXTURE_BINDINGS);
+}
+=================================================================
+ANGLE_INLINE void State::updateActiveTexture(const Context *context,
+                                             size_t textureIndex,
+                                             Texture *texture)
 {
-    ASSERT(0 <= usage && usage < BUFFER_USAGE_COUNT);
-    BufferStorage *&newStorage = mBufferStorages[usage];
-    if (!newStorage)
+    const Sampler *sampler = mSamplers[textureIndex].get();
+    mCompleteTextureBindings[textureIndex].bind(texture);
+
+    if (!texture)
     {
-        newStorage = allocateStorage(usage);
+        mActiveTexturesCache.reset(textureIndex);
+        mDirtyBits.set(DIRTY_BIT_TEXTURE_BINDINGS);
+        return;
     }
-    markBufferUsage(usage);
-    // resize buffer
-    if (newStorage->getSize() < mSize)
-    {
-        ANGLE_TRY(newStorage->resize(context, mSize, true));
-    }
-    ASSERT(newStorage);
-    ANGLE_TRY(updateBufferStorage(context, newStorage, 0, mSize));
-    ANGLE_TRY(garbageCollection(context, usage));
-    *storageOut = GetAs<StorageOutT>(newStorage);
-    return angle::Result::Continue;
+
+    updateActiveTextureState(context, textureIndex, sampler, texture);
 }
 ```
 
-```c++
-template <typename T>
-void SafeDelete(T *&resource)
-{
-    delete resource;
-    resource = nullptr;
-}
+```cpp
+using TextureBindingMap    = angle::PackedEnumMap<TextureType, TextureBindingVector>;
+=======================================================
+TextureBindingMap mSamplerTextures;
 ```
 
 ```c++
-// The order of this enum governs priority of 'getLatestBufferStorage'.
-enum BufferUsage
-{
-    BUFFER_USAGE_SYSTEM_MEMORY,
-    BUFFER_USAGE_STAGING,
-    BUFFER_USAGE_VERTEX_OR_TRANSFORM_FEEDBACK,
-    BUFFER_USAGE_INDEX,
-    BUFFER_USAGE_INDIRECT,
-    BUFFER_USAGE_PIXEL_UNPACK,
-    BUFFER_USAGE_PIXEL_PACK,
-    BUFFER_USAGE_UNIFORM,
-    BUFFER_USAGE_STRUCTURED,
-    BUFFER_USAGE_EMULATED_INDEXED_VERTEX,
-    BUFFER_USAGE_RAW_UAV,
-
-    BUFFER_USAGE_COUNT,
-};
-```
-
-```c++
-Buffer11::BufferStorage *Buffer11::allocateStorage(BufferUsage usage)
-{
-    updateDeallocThreshold(usage);
-    switch (usage)
+    void set(const ContextType *context, ObjectType *newObject)
     {
-        case BUFFER_USAGE_PIXEL_PACK:
-            return new PackStorage(mRenderer);
-        case BUFFER_USAGE_SYSTEM_MEMORY:
-            return new SystemMemoryStorage(mRenderer);
-        case BUFFER_USAGE_EMULATED_INDEXED_VERTEX:
-            return new EmulatedIndexedStorage(mRenderer);
-        case BUFFER_USAGE_INDEX:
-        case BUFFER_USAGE_VERTEX_OR_TRANSFORM_FEEDBACK:
-            return new NativeStorage(mRenderer, usage, this);
-        case BUFFER_USAGE_STRUCTURED:
-            return new StructuredBufferStorage(mRenderer, usage, nullptr);
-        default:
-            return new NativeStorage(mRenderer, usage, nullptr);
+        // addRef first in case newObject == mObject and this is the last reference to it.
+        if (newObject != nullptr)
+        {
+            reinterpret_cast<RefCountObject<ContextType, ErrorType> *>(newObject)->addRef();
+        }
+
+        // Store the old pointer in a temporary so we can set the pointer before calling release.
+        // Otherwise the object could still be referenced when its destructor is called.
+        ObjectType *oldObject = mObject;
+        mObject               = newObject;
+        if (oldObject != nullptr)
+        {
+            reinterpret_cast<RefCountObject<ContextType, ErrorType> *>(oldObject)->release(context); 
+        }
     }
-}
 ```
 
+
+### Do it
 Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
-
-
 
 
 ---------
@@ -139,12 +105,40 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
 <details>
   <summary>My answer</summary>
 
+  By reading detail, we can know `the texture binding state is updated before updating the active texture cache`.
+  ```c++
+    void State::setSamplerTexture(const Context *context, TextureType type, Texture *texture)
+    {
+        mSamplerTextures[type][mActiveSampler].set(context, texture);    [1]
+        if (mProgram && mProgram->getActiveSamplersMask()[mActiveSampler] &&
+            IsTextureCompatibleWithSampler(type, mProgram->getActiveSamplerTypes()[mActiveSampler]))
+        {
+            updateActiveTexture(context, mActiveSampler, texture);   [2]
+        }
+        mDirtyBits.set(DIRTY_BIT_TEXTURE_BINDINGS);
+    }
+  ```
+  [1] means update the binding state, and [2] means update the active texture cache. What can it delete currently bound texture?
+  ```c++
+    void set(const ContextType *context, ObjectType *newObject)
+    {
+        // addRef first in case newObject == mObject and this is the last reference to it.
+        if (newObject != nullptr)
+        {
+            reinterpret_cast<RefCountObject<ContextType, ErrorType> *>(newObject)->addRef();
+        }
 
-  we can see that the begain of `getBufferStorage` have range check. But in true, it can oob read. Because `BUFFER_USAGE_COUNT` not equal to the length of `mBufferStorages`, so it can trade one buffer which not valid as `BufferStorage`.
-
-  What's more, the `newStorage` which we get from `allocateStorage` func, have not inserted into `mBufferStorages`, this mean if we call it twice, it will allocate twice for the same use. Maybe it can be used for breaking it, but I have not further analysis.
-
-  If you are instread of how to construct the Poc, you can get help form [this](https://bugs.chromium.org/p/chromium/issues/attachmentText?aid=457249).
+        // Store the old pointer in a temporary so we can set the pointer before calling release.
+        // Otherwise the object could still be referenced when its destructor is called.
+        ObjectType *oldObject = mObject;
+        mObject               = newObject;
+        if (oldObject != nullptr)
+        {
+            reinterpret_cast<RefCountObject<ContextType, ErrorType> *>(oldObject)->release(context);  [3]
+        }
+    }
+  ```
+  There is release in set func, and the Triggering condition is `oldObject != nullptr` we can easily get this by set same `texture` twice. If we call `State::setSamplerTexture` twice with same `texture`, it can trigger uaf at `updateActiveTexture` in the second call.
 
 </details>
 
