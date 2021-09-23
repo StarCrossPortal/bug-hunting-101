@@ -105,7 +105,7 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
 <details>
   <summary>My answer</summary>
 
-  By reading detail, we can know `the texture binding state is updated before updating the active texture cache`.
+  By reading detail, we can know `the texture binding state is updated before updating the active texture cache`.
   ```c++
     void State::setSamplerTexture(const Context *context, TextureType type, Texture *texture)
     {
