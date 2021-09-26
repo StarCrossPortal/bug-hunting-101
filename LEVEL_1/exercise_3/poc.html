@@ -1,0 +1,57 @@
+<html>
+<head>
+<script id="vshader" type="x-shader/x-vertex">
+void main()
+{
+}
+</script>
+<script id="fshader" type="x-shader/x-fragment">
+void main()
+{
+    gl_FragData[0] = vec4(1, 2, 3, 4);
+}
+</script>
+<script type="text/javascript">
+function trigger() {
+    var canvas = document.getElementById('canvas');
+
+    var gl = canvas.getContext('webgl2');
+    var vShader = gl.createShader(gl.VERTEX_SHADER);
+    var vShaderScript = document.getElementById('vshader');
+
+    gl.shaderSource(vShader, vShaderScript.text);
+    gl.compileShader(vShader);
+
+    var fShader = gl.createShader(gl.FRAGMENT_SHADER);
+    var fShaderScript = document.getElementById('fshader');
+    gl.shaderSource(fShader, fShaderScript.text);
+    gl.compileShader(fShader);
+
+    var program = gl.createProgram();
+    gl.attachShader(program, vShader);
+    gl.attachShader(program, fShader);
+    gl.linkProgram(program);
+
+    gl.useProgram(program);
+
+    var buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+    gl.vertexAttrib4f(0, 0, 0, 0, 0);
+    gl.drawElements(gl.TRIANGLES, 0, gl.UNSIGNED_SHORT, gl.UNSIGNED_BYTE);
+
+    var vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    //gl.drawRangeElements(gl.LINE_STRIP, 0, 0, 0x100, gl.UNSIGNED_BYTE, 0x41424344);
+    gl.drawRangeElements(gl.LINE_STRIP, 0, 0, 0x12345, gl.UNSIGNED_SHORT, 0x41424344);
+}
+
+function start() {
+    trigger();
+}
+
+</script>
+</head>
+<body onload="start();">
+<canvas id="canvas"></canvas>
+</body>
+</html>
