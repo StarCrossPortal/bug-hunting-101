@@ -3,7 +3,7 @@
 ## CVE-2020-16005
 I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
 
-This time we do it by code audit, and download source code.
+This time we do it by code audit
 ### Details
 
 > When the WebGL2RenderingContext.drawRangeElements() API is processed in the ANGLE library, IndexDataManager::prepareIndexData is called internally.
@@ -29,6 +29,30 @@ Then checkout the branch, we set the commit hash
 cd angle
 git  reset --hard 6e1259375f2d6f579fe7430442a9657e00d15656  # we get it by issue page
 ```
+Download depot_tools and ninja
+```sh
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+echo 'export PATH=$PATH:"/path/to/depot_tools"' >> ~/.bashrc # or zshrc  
+
+git clone https://github.com/ninja-build/ninja.git
+cd ninja && ./configure.py --bootstrap && cd ..
+echo 'export PATH=$PATH:"/path/to/ninja"' >> ~/.bashrc
+```
+
+Sync all standalone dependencies
+```sh
+# open new terminal to update env
+cd src/third_party/angle
+python scripts/bootstrap.py   # download depot_tools in advance
+gclient sync
+```
+Generate ANGLE standalone build files and build
+```sh
+gn gen out/Debug              # download ninja in advance
+ninja -j 10 -k1 -C out/Debug
+```
+
+more detile in [offical](https://chromium.googlesource.com/angle/angle/+/HEAD/doc/BuildingAngleForChromiumDevelopment.md)
 
 ### Related code
 we can analysis the source file [online](https://chromium.googlesource.com/angle/angle/+/6e1259375f2d6f579fe7430442a9657e00d15656/src/libANGLE/renderer/d3d/IndexDataManager.cpp#135) or offline.
@@ -70,7 +94,7 @@ we can analysis the source file [online](https://chromium.googlesource.com/angle
         if (glBuffer == nullptr)
         {
             translated->storage = nullptr;
-            return streamIndexData(context, indices, count, srcType, dstType,
+            return streamIndexData(context, indices, count, srcType, dstType,  //call streamIndexData
                                 primitiveRestartFixedIndexEnabled, translated);
         }
 
@@ -80,68 +104,100 @@ we can analysis the source file [online](https://chromium.googlesource.com/angle
 
         bool offsetAligned = IsOffsetAligned(srcType, offset);
 
-        // Case 2a: the buffer can be used directly
-        if (offsetAligned && buffer->supportsDirectBinding() && dstType == srcType)
-        {
-            translated->storage     = buffer;
-            translated->indexBuffer = nullptr;
-            translated->serial      = buffer->getSerial();
-            translated->startIndex  = (offset >> srcTypeShift);
-            translated->startOffset = offset;
-            return angle::Result::Continue;
-        }
+        [ ... ]
+==============================================================================
+angle::Result IndexDataManager::streamIndexData(const gl::Context *context,
+                                                const void *data,
+                                                unsigned int count,
+                                                gl::DrawElementsType srcType,
+                                                gl::DrawElementsType dstType,
+                                                bool usePrimitiveRestartFixedIndex,
+                                                TranslatedIndexData *translated)
+{
+    const GLuint dstTypeShift = gl::GetDrawElementsTypeShift(dstType);
 
-        translated->storage = nullptr;
+    IndexBufferInterface *indexBuffer = nullptr;
+    ANGLE_TRY(getStreamingIndexBuffer(context, dstType, &indexBuffer));
+    ASSERT(indexBuffer != nullptr);
 
-        // Case 2b: use a static translated copy or fall back to streaming
-        StaticIndexBufferInterface *staticBuffer = buffer->getStaticIndexBuffer();
+    unsigned int offset;
+    ANGLE_TRY(StreamInIndexBuffer(context, indexBuffer, data, count, srcType, dstType,  // call StreamInIndexBuffer
+                                  usePrimitiveRestartFixedIndex, &offset));
 
-        bool staticBufferInitialized = staticBuffer && staticBuffer->getBufferSize() != 0;
-        bool staticBufferUsable =
-            staticBuffer && offsetAligned && staticBuffer->getIndexType() == dstType;
+    translated->indexBuffer = indexBuffer->getIndexBuffer();
+    translated->serial      = indexBuffer->getSerial();
+    translated->startIndex  = (offset >> dstTypeShift);
+    translated->startOffset = offset;
 
-        if (staticBufferInitialized && !staticBufferUsable)
-        {
-            buffer->invalidateStaticData(context);
-            staticBuffer = nullptr;
-        }
+    return angle::Result::Continue;
+}
+===================================================================================
+angle::Result StreamInIndexBuffer(const gl::Context *context,
+                                  IndexBufferInterface *buffer,
+                                  const void *data,
+                                  unsigned int count,
+                                  gl::DrawElementsType srcType,
+                                  gl::DrawElementsType dstType,
+                                  bool usePrimitiveRestartFixedIndex,
+                                  unsigned int *offset)
+{
+    const GLuint dstTypeBytesShift = gl::GetDrawElementsTypeShift(dstType);
 
-        if (staticBuffer == nullptr || !offsetAligned)
-        {
-            const uint8_t *bufferData = nullptr;
-            ANGLE_TRY(buffer->getData(context, &bufferData));
-            ASSERT(bufferData != nullptr);
+    bool check = (count > (std::numeric_limits<unsigned int>::max() >> dstTypeBytesShift));
+    ANGLE_CHECK(GetImplAs<ContextD3D>(context), !check,
+                "Reserving indices exceeds the maximum buffer size.", GL_OUT_OF_MEMORY);
 
-            ANGLE_TRY(streamIndexData(context, bufferData + offset, count, srcType, dstType,
-                                    primitiveRestartFixedIndexEnabled, translated));
-            buffer->promoteStaticUsage(context, count << srcTypeShift);
-        }
-        else
-        {
-            if (!staticBufferInitialized)
-            {
-                const uint8_t *bufferData = nullptr;
-                ANGLE_TRY(buffer->getData(context, &bufferData));
-                ASSERT(bufferData != nullptr);
+    unsigned int bufferSizeRequired = count << dstTypeBytesShift;
+    ANGLE_TRY(buffer->reserveBufferSpace(context, bufferSizeRequired, dstType));
 
-                unsigned int convertCount =
-                    static_cast<unsigned int>(buffer->getSize()) >> srcTypeShift;
-                ANGLE_TRY(StreamInIndexBuffer(context, staticBuffer, bufferData, convertCount, srcType,
-                                            dstType, primitiveRestartFixedIndexEnabled, nullptr));
-            }
-            ASSERT(offsetAligned && staticBuffer->getIndexType() == dstType);
+    void *output = nullptr;
+    ANGLE_TRY(buffer->mapBuffer(context, bufferSizeRequired, &output, offset));
 
-            translated->indexBuffer = staticBuffer->getIndexBuffer();
-            translated->serial      = staticBuffer->getSerial();
-            translated->startIndex  = (offset >> srcTypeShift);
-            translated->startOffset = (offset >> srcTypeShift) << dstTypeShift;
-        }
+    ConvertIndices(srcType, dstType, data, count, output, usePrimitiveRestartFixedIndex);  // call
 
-        return angle::Result::Continue;
+    ANGLE_TRY(buffer->unmapBuffer(context));
+    return angle::Result::Continue;
+}
+============================================================================================
+void ConvertIndices(gl::DrawElementsType sourceType,
+                    gl::DrawElementsType destinationType,
+                    const void *input,
+                    GLsizei count,
+                    void *output,
+                    bool usePrimitiveRestartFixedIndex)
+{
+    if (sourceType == destinationType)
+    {
+        const GLuint dstTypeSize = gl::GetDrawElementsTypeSize(destinationType);
+        memcpy(output, input, count * dstTypeSize);
+        return;
     }
+
+    if (sourceType == gl::DrawElementsType::UnsignedByte)
+    {
+        ASSERT(destinationType == gl::DrawElementsType::UnsignedShort);
+        ConvertIndexArray<GLubyte, GLushort>(input, sourceType, output, destinationType, count,
+                                             usePrimitiveRestartFixedIndex);
+    }
+    else if (sourceType == gl::DrawElementsType::UnsignedShort)
+    {
+        ASSERT(destinationType == gl::DrawElementsType::UnsignedInt);
+        ConvertIndexArray<GLushort, GLuint>(input, sourceType, output, destinationType, count,
+                                            usePrimitiveRestartFixedIndex);
+    }
+    else
+        UNREACHABLE();
+}
 ```
-
-
+```c++
+    angle::Result drawRangeElements(const gl::Context *context,
+                                    gl::PrimitiveMode mode,
+                                    GLuint start,
+                                    GLuint end,
+                                    GLsizei count,
+                                    gl::DrawElementsType type,
+                                    const void *indices) override;
+```
 
 
 
@@ -154,8 +210,76 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
 <details>
   <summary>My answer</summary>
 
-  
+  You can get info about [WebGL2RenderingContext.drawRangeElements()](https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/drawRangeElements) to know how to construct Poc.
+  Notice that if we call `drawRangeElements()` with a invalide parameter, the bug can be trigger. It is the easiest challenge of the three.
+  ```c++
+        angle::Result IndexDataManager::prepareIndexData(const gl::Context *context,
+                                                    gl::DrawElementsType srcType,
+                                                    gl::DrawElementsType dstType,
+                                                    GLsizei count,
+                                                    gl::Buffer *glBuffer,
+                                                    const void *indices,
+                                                    TranslatedIndexData *translated)
+    {
+        // Case 1: the indices are passed by pointer, which forces the streaming of index data
+        if (glBuffer == nullptr)                                               [1]
+        {
+            translated->storage = nullptr;
+            return streamIndexData(context, indices, count, srcType, dstType,  [2]
+                                primitiveRestartFixedIndexEnabled, translated);
+        }
+  ```
+  if `glBuffer == nullptr`, `indices` can be second parameter of `streamIndexData`.
+  ```c++
+    angle::Result IndexDataManager::streamIndexData(const gl::Context *context,
+                                                const void *data,       <----------
+                                                unsigned int count,
+                                                gl::DrawElementsType srcType,
+                                                gl::DrawElementsType dstType,
+                                                bool usePrimitiveRestartFixedIndex,
+                                                TranslatedIndexData *translated)
+    {
+        unsigned int offset;
+        ANGLE_TRY(StreamInIndexBuffer(context, indexBuffer, data, count, srcType, dstType,  [3] indices as third parameter
+                                    usePrimitiveRestartFixedIndex, &offset));
 
+        return angle::Result::Continue;
+    }
+    =================================================================================
+    angle::Result StreamInIndexBuffer(const gl::Context *context,
+                                  IndexBufferInterface *buffer,
+                                  const void *data,  <---------------
+                                  unsigned int count,
+                                  gl::DrawElementsType srcType,
+                                  gl::DrawElementsType dstType,
+                                  bool usePrimitiveRestartFixedIndex,
+                                  unsigned int *offset)
+    {
+        ConvertIndices(srcType, dstType, data, count, output, usePrimitiveRestartFixedIndex);  [4] indices as third parameter
+
+        ANGLE_TRY(buffer->unmapBuffer(context));
+        return angle::Result::Continue;
+    }
+    ========================================================================================
+    void ConvertIndices(gl::DrawElementsType sourceType,
+                    gl::DrawElementsType destinationType,
+                    const void *input,     <------------------
+                    GLsizei count,
+                    void *output,
+                    bool usePrimitiveRestartFixedIndex)
+    {
+        if (sourceType == destinationType)
+        {
+            const GLuint dstTypeSize = gl::GetDrawElementsTypeSize(destinationType);
+            memcpy(output, input, count * dstTypeSize);    [5] call memcpy and we can control input as any value
+            return;
+        }
+        // other type of sourceType, but they all have assignment operation
+        [ .... ]
+    }
+  ```
+  This time I encourage you to try construct Poc, you just need call `gl.drawRangeElements(mode, start, end, count, type, offset);` and fill the last parameter named `offset` with a invalid value like `0xdeadbeef`. But there is a lot of pre-work before this, you need to search some info to reach. And test it on the angle your build ago.
+  
 
 </details>
 
