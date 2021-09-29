@@ -1,0 +1,52 @@
+<iframe id="result" srcdoc="
+    <style>
+    .rainbow__band:nth-of-type(2) {
+    --hue: 35;
+    }
+    </style>
+    <div class=&quot;rainbow__band&quot; style=&quot;--index: 0;&quot;></div>"
+>
+</iframe>
+
+<iframe id="result" srcdoc="
+    <style>
+    .rainbow__band {
+    -webkit-animation: rainbow 2s calc(var(--index, 0) * -0.2s) infinite linear;
+        animation: rainbow 2s calc(var(--index, 0) * -0.2s) infinite linear;
+    }
+
+    @-webkit-keyframes rainbow {
+    0%, 100% {
+    --hue: 10;
+    }
+    }
+    </style>
+    <div class=&quot;rainbow__band&quot; style=&quot;--index: 0;&quot;></div>
+    </div>
+    ">
+</iframe>
+
+<iframe id="result" srcdoc="
+    <style>
+    @property --hue {
+    initial-value: 0;
+    inherits: false;
+    syntax: '<number>';
+    }
+
+    .rainbow__band {
+
+    -webkit-animation: rainbow 2s calc(var(--index, 0) * -0.2s) infinite linear;
+        animation: rainbow 2s calc(var(--index, 0) * -0.2s) infinite linear;
+    }
+
+    @keyframes rainbow {
+        to {
+        --hue: 360;
+        }
+    }
+    </style>
+    <div class=&quot;rainbow__band&quot; style=&quot;--index: 0;&quot;></div>
+    </div>"
+>
+</iframe>
