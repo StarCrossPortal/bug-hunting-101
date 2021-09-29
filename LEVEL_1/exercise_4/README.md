@@ -36,12 +36,8 @@ You'd better read [these](https://www.chromium.org/blink) to have a preliminary 
 
 ### Set environment
 
-Get source code
-```sh
-git clone https://chromium.googlesource.com/chromium/blink
-cd blink
-git reset --hard 6c3c857b90ef63822c8e598bdb7aea604ba1688c
-```
+Because the hash we get from issue page is related to chromium, we need download the chromium source code and blink is one part of it. I upload the main file and you can try to fetch chromium.
+The hash [`6c3c857b90ef63822c8e598bdb7aea604ba1688c`](https://github.com/chromium/chromium/tree/6c3c857b90ef63822c8e598bdb7aea604ba1688c/third_party/blink)
 
 ### Related code
 we can analysis the source file [online](https://chromium.googlesource.com/chromium/src/+/6c3c857b90ef63822c8e598bdb7aea604ba1688c/third_party/blink/renderer/core/scroll/mac_scrollbar_animator_impl.mm#414) or offline.
@@ -285,7 +281,6 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
     ownership claim to that object.  **scoped_nsobject<> does not call -retain,
     callers have to call this manually if appropriate.**
   - About `void base::scoped_nsprotocol< NST >::reset( NST object = nil )`:
-    >
     ```objective-c                            {
       // We intentionally do not check that object != object_ as the caller must
       // either already have an ownership claim over whatever it passes to this
