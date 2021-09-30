@@ -1,0 +1,26 @@
+<body></body>
+<script>
+function allociframe(){
+  var iframe = document.createElement( "iframe");
+  console.log(iframe);
+  iframe.height = 0;
+  iframe.width = 0;
+  //
+  document.body.appendChild( iframe );
+  return iframe;
+}
+iframe = allociframe();
+c = iframe.contentDocument.createElement("div");
+var arr=[];
+
+arr.__defineGetter__(0,()=>{
+    console.log("getter");
+    document.body.removeChild(iframe);
+    return { transform: 'translate3D(0, -300px, 0)' };
+})
+c.animate(arr,{
+  duration: 3000,
+  iterations: Infinity,
+  timeline:null
+});
+</script>
