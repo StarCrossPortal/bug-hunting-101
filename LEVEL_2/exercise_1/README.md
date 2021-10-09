@@ -51,7 +51,7 @@ static bool IsWholeWordMatch(const UChar* text,
                              MatchResultICU& result) {
   DCHECK_LE((int)(result.start + result.length), text_length);
   UChar32 first_character;
-  U16_GET(text, 0, result.start, result.length, first_character);
+  U16_GET(text, 0, result.start, result.length, first_character);  [1]
 
   // Chinese and Japanese lack word boundary marks, and there is no clear
   // agreement on what constitutes a word, so treat the position before any CJK
@@ -69,7 +69,11 @@ static bool IsWholeWordMatch(const UChar* text,
   return static_cast<int>(result.start + result.length) ==
          FindWordEndBoundary(text, text_length, word_break_search_start);
 }
-=======================================================================
+==========================================================
+#define CHECK_LE(val1, val2) CHECK_OP(<=, val1, val2)
+  ```
+  [1] call `U16_GET` after `DCHECK_LE`. This check means `result.start + result.length` must lessthan `text_length`, we can see about `U16_GET`
+  ```c++
 /**
  * Get a code point from a string at a random-access offset,
  * without changing the offset.
@@ -98,7 +102,7 @@ static bool IsWholeWordMatch(const UChar* text,
     if(U16_IS_SURROGATE(c)) { \
         uint16_t __c2; \
         if(U16_IS_SURROGATE_LEAD(c)) { \
-            if((i)+1!=(length) && U16_IS_TRAIL(__c2=(s)[(i)+1])) { \
+            if((i)+1!=(length) && U16_IS_TRAIL(__c2=(s)[(i)+1])) { \ [2]
                 (c)=U16_GET_SUPPLEMENTARY((c), __c2); \
             } \
         } else { \
@@ -109,6 +113,21 @@ static bool IsWholeWordMatch(const UChar* text,
     } \
 } UPRV_BLOCK_MACRO_END
   ```
+  the third parameter is the length of the target string which be searched, just like find xy in xyd, and the length of this time is two.
+  But [2] makes me puzzle, it seems like the `length` parameter is the end index of the `xyd`, but in truth it is the length of `xy`. And `@param length string length` proves my opinion. If we assignment i == length like i = 2, length = 2 and `__c2=(s)[(i)+1]` can oob read.
+  We can check our answer by Detail.
+
+  > This patch chagnes |IsWholeWordMatch()| to use |U16_GET()| with valid
+  > parameters to avoid reading out of bounds data.
+  >
+  > In case of search "\uDB00" (broken surrogate pair) in "\u0022\uDB00", we
+  > call |U16_GET(text, start, index, length, u32)| with start=1, index=1,
+  > length=1, where text = "\u0022\DB800", then |U16_GET()| reads text[2]
+  > for surrogate tail.
+  >
+  > After this patch, we call |U16_GET()| with length=2==end of match, to
+  > make |U16_GET()| not to read text[2].
+
 
 
 </details>
