@@ -35,6 +35,7 @@ git reset -hard 13aa7b32816e52bf1242d073ada2c892798190e7
 [third_party/blink/renderer/modules/compression/inflate_transformer.cc](https://chromium.googlesource.com/chromium/src.git/+/13aa7b32816e52bf1242d073ada2c892798190e7/third_party/blink/renderer/modules/compression/inflate_transformer.cc)
 [third_party/blink/renderer/modules/compression/inflate_transformer.h](https://chromium.googlesource.com/chromium/src.git/+/13aa7b32816e52bf1242d073ada2c892798190e7/third_party/blink/renderer/modules/compression/inflate_transformer.h)
 
+You can read this [doc](https://docs.google.com/document/d/1TovyqqeC3HoO0A4UUBKiCyhZlQSl7jM_F7KbWjK2Gcs/edit)  and [this](https://github.com/WICG/compression/blob/main/explainer.md) to get some info about `CompressionStreams` in chrome
 
 ### Do it
 Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
