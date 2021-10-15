@@ -26,7 +26,7 @@ In level 2, we do it without the help of Details
 
 after you fetch chromium
 ```sh
-git reset -hard 978994829edb17b9583ab7a6a8b001a5b9dab04e
+git reset --hard 978994829edb17b9583ab7a6a8b001a5b9dab04e
 ```
 
 ### Related code

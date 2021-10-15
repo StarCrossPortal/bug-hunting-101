@@ -36,7 +36,7 @@ You can read [this](https://chromium.googlesource.com/chromium/src/+/af77c20371d
 
 after you fetch chromium
 ```sh
-git reset -hard 710bae69e18a9b086795cf79d849bd7f6e9c97fa
+git reset --hard 710bae69e18a9b086795cf79d849bd7f6e9c97fa
 ```
 
 ### Related code

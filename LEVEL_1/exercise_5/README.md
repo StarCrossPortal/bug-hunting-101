@@ -38,7 +38,7 @@ Just like exercise_4, we need chromium. I recomend you do as [offical gudience](
 
 When you finish the above
 ```sh
-git reset -hard 7e5707cc5f46b0155b9e42b121c8e2128c05f178 
+git reset --hard 7e5707cc5f46b0155b9e42b121c8e2128c05f178 
 ```
 
 ### Related code
