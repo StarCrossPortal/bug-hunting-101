@@ -116,8 +116,20 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
 ---------
 
 <details>
-  <summary>My answer</summary>
+  <summary>My answer, probably wrong</summary>
 
+  ```c++
+// Marking algorithm. Example for a valid call sequence creating the marking
+// phase:
+// 1. StartMarking() [Called implicitly when creating a Marker using
+//                    MarkerFactory]
+// 2. AdvanceMarkingWithLimits() [Optional, depending on environment.]
+// 3. EnterAtomicPause()
+// 4. AdvanceMarkingWithLimits()
+// 5. LeaveAtomicPause()
+//
+// Alternatively, FinishMarking combines steps 3.-5.
+  ```
   https://chromium.googlesource.com/v8/v8.git/+/e677a6f6b257e992094b9183a958b67ecc68aa85
   ```c++
 void MarkingStateBase::ProcessEphemeron(const void* key, const void* value,
@@ -129,6 +141,12 @@ void MarkingStateBase::ProcessEphemeron(const void* key, const void* value,
   if (!HeapObjectHeader::FromObject(key)
           .IsInConstruction<AccessMode::kAtomic>() &&   [1]
       HeapObjectHeader::FromObject(key).IsMarked<AccessMode::kAtomic>()) { [2]
+  /**
+   * value_desc.base_object_payload:
+   * 
+   * Adjusted base pointer, i.e., the pointer to the class inheriting directly
+   * from GarbageCollected, of the object that is being traced.
+   */
     if (value_desc.base_object_payload) {
       MarkAndPush(value_desc.base_object_payload, value_desc);
     } else {
@@ -138,16 +156,36 @@ void MarkingStateBase::ProcessEphemeron(const void* key, const void* value,
     }
     return;
   }
-  discovered_ephemeron_pairs_worklist_.Push({key, value, value_desc});
+  discovered_ephemeron_pairs_worklist_.Push({key, value, value_desc}); // if find new ephemeron_pairs, need push
+}
+=======================================================================
+template <size_t deadline_check_interval, typename WorklistLocal,
+          typename Callback, typename Predicate>
+bool DrainWorklistWithPredicate(Predicate should_yield,
+                                WorklistLocal& worklist_local,
+                                Callback callback) {
+  if (worklist_local.IsLocalAndGlobalEmpty()) return true;
+  // For concurrent markers, should_yield also reports marked bytes.
+  if (should_yield()) return false;
+  size_t processed_callback_count = deadline_check_interval;
+  typename WorklistLocal::ItemType item;
+  while (worklist_local.Pop(&item)) {
+    callback(item);             // ProcessEphemeron
+    if (--processed_callback_count == 0) {
+      if (should_yield()) {
+        return false;
+      }
+      processed_callback_count = deadline_check_interval;
+    }
+  }
+  return true;
 }
   ```
-  [1] `IsInConstruction == false` means the the data of `HeapObjectHeader` all setted up.
+  [1] `IsInConstruction == false` means the the data of `Object` all setted up.
 
-  [2] `IsMarked == true` means this `HeapObjectHeader` has been marked.
+  [2] `IsMarked == true` means this `object` has been marked.
 
-  `ProcessEphemeron` means if key has been marked and `value_desc.base_object_payload`(may be write barrier?) not null, we need to mark value, else we find new  `ephemeron_pairs`.
-
-  But if `value_desc.base_object_payload` have not been set, we need to search old space for what object prt to this value. During this process, the `ProcessEphemeron` can be called recursively. Finally,
+  the `ProcessEphemeron` will be the parameter of `DrainWorklistWithPredicate` named `callback` and `discovered_ephemeron_pairs_worklist_` pop item to call `RocessEphemeron` in loop
 
   ```c++
 const HeapObjectHeader& HeapObjectHeader::FromObject(const void* object) {  [3]
@@ -189,34 +227,41 @@ static constexpr T decode(U value) {
   you can understand [6] better by this.
 
    ```c++
-  HeapObjectHeader contains meta data per object and is prepended to each
-  object.
-
-  +-----------------+------+------------------------------------------+
-  | name | bits | |
-  +-----------------+------+------------------------------------------+
-  | padding | 32 | Only present on 64-bit platform. |
-  +-----------------+------+------------------------------------------+
-  | GCInfoIndex | 14 | |
-  | unused | 1 | |
-  | in construction | 1 | In construction encoded as |false|. |
-  +-----------------+------+------------------------------------------+
-  | size | 15 | 17 bits because allocations are aligned. |
-  | mark bit | 1 | |
-  +-----------------+------+------------------------------------------+
-  
-  Notes:
-  - See |GCInfoTable| for constraints on GCInfoIndex.
-  - |size| for regular objects is encoded with 15 bits but can actually
-  represent sizes up to |kBlinkPageSize| (2^17) because allocations are
-  always 4 byte aligned (see kAllocationGranularity) on 32bit. 64bit uses
-  8 byte aligned allocations which leaves 1 bit unused.
-  - |size| for large objects is encoded as 0. The size of a large object is
-  stored in |LargeObjectPage::PayloadSize()|.
-  - |mark bit| and |in construction| bits are located in separate 16-bit halves
-  to allow potentially accessing them non-atomically.
+// HeapObjectHeader contains meta data per object and is prepended to each
+// object.
+//
+// +-----------------+------+------------------------------------------+
+// | name            | bits |                                          |
+// +-----------------+------+------------------------------------------+
+// | padding         |   32 | Only present on 64-bit platform.         |
+// +-----------------+------+------------------------------------------+
+// | GCInfoIndex     |   14 |                                          |
+// | unused          |    1 |                                          |
+// | in construction |    1 | In construction encoded as |false|.      |
+// +-----------------+------+------------------------------------------+
+// | size            |   15 | 17 bits because allocations are aligned. |
+// | mark bit        |    1 |                                          |
+// +-----------------+------+------------------------------------------+
+//
+// Notes:
+// - See |GCInfoTable| for constraints on GCInfoIndex.
+// - |size| for regular objects is encoded with 15 bits but can actually
+//   represent sizes up to |kBlinkPageSize| (2^17) because allocations are
+//   always 4 byte aligned (see kAllocationGranularity) on 32bit. 64bit uses
+//   8 byte aligned allocations which leaves 1 bit unused.
+// - |size| for large objects is encoded as 0. The size of a large object is
+//   stored in |LargeObjectPage::PayloadSize()|.
+// - |mark bit| and |in construction| bits are located in separate 16-bit halves
+//    to allow potentially accessing them non-atomically.
   ```
   So [7] can get specific bit of `HeapObjectHeader` | meta data, means the Object status information
+
+  `ProcessEphemeron` func means if object has been marked and `value_desc.base_object_payload`(may be write barrier?) not null, we need to mark value_desc.base_object_payload, else we find new  `ephemeron_pairs`.
+
+  But if `value_desc.base_object_payload` have not been set, we need to callback (maybe used for search old space for what object prt to this value), this may lead to recursive call. And the mark process can be stoped because the time limit.
+  
+  There are many gc processes, if two of them call the `ProcessEphemeron` and the A process prepare to mark value. But B process find new `ephemeron_pairs`, the mark will be stoped, **I gusee** :), lead to a marked key with an unmarked value.
+  
 
 </details>
 
