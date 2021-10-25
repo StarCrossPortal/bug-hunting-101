@@ -31,10 +31,13 @@ git reset --hard ae7b398ad2ba00cbf901fda43305ad9b371d534a
 
 ### Related code
 chrome/browser/ui/views/tabs/tab_drag_controller.cc
+
 chrome/browser/ui/tabs/tab_strip_model.cc
 
 you have to read the `tab_drag_controller.h` and `tab_strip_model.h` to understand some nouns.
+
 tips:
+
 **TabDragController**
 ```c++
 // TabDragController is responsible for managing the tab dragging session. When
