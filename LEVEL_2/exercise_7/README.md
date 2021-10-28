@@ -35,6 +35,9 @@ git reset --hard a8b9044e5a317034dca14763906aed6fa743ab58
 
 third_party/blink/renderer/modules/webgl/webgl_rendering_context_base.cc
 
+tips: Not all delete operation set `var` null. In some cases we need save the destoried var for next step.
+
+The bug is in the last quarter of the source code.
 
 ### Do it
 Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
@@ -45,7 +48,53 @@ Do this exercise by yourself, when you have some idea, you can compare your answ
 <details>
   <summary>My answer</summary>
 
-   [ write your answer here ]
+  This cve describes a type of vulnerability for us.
+  ```c++
+void WebGLRenderingContextBase::PrintWarningToConsole(const String& message) {
+  blink::ExecutionContext* context = Host()->GetTopExecutionContext();
+  if (context) {                                                 [1]
+    context->AddConsoleMessage(MakeGarbageCollected<ConsoleMessage>(
+        mojom::ConsoleMessageSource::kRendering,
+        mojom::ConsoleMessageLevel::kWarning, message));
+  }
+}
+  ```
+  `if (context)` can not check whether the `context` has been destoried, and then it can cause uap. We need check `context->IsContextDestroyed()`.
+  ```c++
+  // Now that the context and context group no longer hold on to the
+  // objects they create, and now that the objects are eagerly finalized
+  // rather than the context, there is very little useful work that this
+  // destructor can do, since it's not allowed to touch other on-heap
+  // objects. All it can do is destroy its underlying context, which, if
+  // there are no other contexts in the same share group, will cause all of
+  // the underlying graphics resources to be deleted. (Currently, it's
+  // always the case that there are no other contexts in the same share
+  // group -- resource sharing between WebGL contexts is not yet
+  // implemented, and due to its complex semantics, it's doubtful that it
+  // ever will be.)
+void WebGLRenderingContextBase::DestroyContext() {
+  if (!GetDrawingBuffer())
+    return;
+
+  clearProgramCompletionQueries();
+
+  extensions_util_.reset();
+
+  base::RepeatingClosure null_closure;
+  base::RepeatingCallback<void(const char*, int32_t)> null_function;
+  GetDrawingBuffer()->ContextProvider()->SetLostContextCallback(
+      std::move(null_closure));
+  GetDrawingBuffer()->ContextProvider()->SetErrorMessageCallback(
+      std::move(null_function));
+
+  DCHECK(GetDrawingBuffer());
+  drawing_buffer_->BeginDestruction();
+  drawing_buffer_ = nullptr;
+}
+  ```
+
+  Do this cve for exercise aims to let you know this type of vulnerability.
+  
 
 </details>
 
