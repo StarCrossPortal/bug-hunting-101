@@ -126,7 +126,7 @@ gfx::Rect PDFiumPage::PageToScreen(const gfx::Point& page_point,
   > DCHECK() here isn't sufficient to prevent the use of uninitialized
   > memory should this someday return false.
 
-  The purpose of using this cve is to remind everyone that the bug can be prevent by `DCHECK` is also an vulnerability.
+  The purpose of using this cve is to remind everyone that if the return value means important, we must CHECK it not just DCHECK. For example, if there is func check whether the `var` has been initialize, return true or false. But we DCHECK the return value, it cause that if the `var` is uninitialized, we cann't prevent to use it in release build.
 
 </details>
 
