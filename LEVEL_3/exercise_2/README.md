@@ -173,11 +173,13 @@ console.log(foo(true)) //prints false
   ```
   When construct Poc of turbofan, we need analysis turbolizer or break at `../../src/compiler/representation-change.cc:853` to know whether we get kWord64 and convert to int32. I get this poc form [there](https://iamelli0t.github.io/2021/04/20/Chromium-Issue-1196683-1195777.html#rca-of-issue-1195777)
 
-  `Array.prototype.shift()` is a trick which has been patched, we can make array length == -1 by shift
+  checkbounds—elimination had been bannde and `Array.prototype.shift()` is a trick which has been patched now, but this commit can trigger it, we can make array length == -1 by shift
   ```js
 let vuln_array = new Array(0 - Math.max(0, x));
 vuln_array.shift();
   ```
+
+  full exp can be found [here](https://bugs.chromium.org/p/chromium/issues/detail?id=1195777#c15)
 
 </details>
 
