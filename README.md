@@ -11,13 +11,47 @@ The learning path is divided into three steps:
 - Level 3, I will do as level 2 and construct Poc and exp(optional).
 
 
+## LEVEL 1
+|                Exercise No.                |        CVEs        |    Target    |
+| :----------------------------------------: | :----------------: | :----------: |
+| [LEVEl_1/exercise_1](./LEVEL_1/exercise_1) | **CVE-2020-6542**  | Chrome WebGL |
+| [LEVEl_1/exercise_2](./LEVEL_1/exercise_2) | **CVE-2020-6542**  | Chrome ANGLE |
+| [LEVEl_1/exercise_3](./LEVEL_1/exercise_3) | **CVE-2020-16005** |    ANGLE     |
+| [LEVEl_1/exercise_4](./LEVEL_1/exercise_4) | **CVE-2021-21204** | Chrome Blink |
+| [LEVEl_1/exercise_5](./LEVEL_1/exercise_5) | **CVE-2021-21203** |    Blink     |
+| [LEVEl_1/exercise_6](./LEVEL_1/exercise_6) | **CVE-2021-21188** |    Blink     |
+| [LEVEl_1/exercise_7](./LEVEL_1/exercise_7) | **CVE-2021-30565** |    V8 GC     |
+
+## LEVEL 2
+|               Exercise No.               |        CVEs        |    Target     |
+| :--------------------------------------: | :----------------: | :-----------: |
+| [LEVEL_2/exercise_1](LEVEL_2/exercise_1) | **CVE-2021-21128** |     Blink     |
+| [LEVEL_2/exercise_2](LEVEL_2/exercise_2) | **CVE-2021-21122** |     Blink     |
+| [LEVEL_2/exercise_3](LEVEL_2/exercise_3) | **CVE-2021-21112** |     Blink     |
+| [LEVEL_2/exercise_4](LEVEL_2/exercise_4) | **CVE-2021-30565** |  Chrome Tab   |
+| [LEVEL_2/exercise_5](LEVEL_2/exercise_5) | **CVE-2021-21159** |      Tab      |
+| [LEVEL_2/exercise_6](LEVEL_2/exercise_6) | **CVE-2021-21190** | Chrome pdfium |
+| [LEVEL_2/exercise_7](LEVEL_2/exercise_7) | **CVE-2020-6422**  |     Blink     |
+
+## LEVEL 3
+|                Exercise No.                |        CVEs        |        Target        |
+| :----------------------------------------: | :----------------: | :------------------: |
+| [LEVEl_3/exercise_1](./LEVEL_3/exercise_1) | **CVE-2021-21226** | navigation_predictor |
+| [LEVEl_3/exercise_2](./LEVEL_3/exercise_2) | **CVE-2021-21224** |          V8          |
+| [LEVEl_3/exercise_3](./LEVEL_3/exercise_3) |                    |                      |
+|                                            |                    |                      |
+|                                            |                    |                      |
+|                                            |                    |                      |
+|                                            |                    |                      |
+|                                            |                    |                      |
+
+
 
 
 
 ## How to contribute
 
 Writing your exercise follow [this](./Template.md) format.
-
 
 
 
