@@ -38,10 +38,9 @@ The learning path is divided into three steps:
 | :----------------------------------------: | :----------------: | :------------------: |
 | [LEVEl_3/exercise_1](./LEVEL_3/exercise_1) | **CVE-2021-21226** | navigation_predictor |
 | [LEVEl_3/exercise_2](./LEVEL_3/exercise_2) | **CVE-2021-21224** |          V8          |
-| [LEVEl_3/exercise_3](./LEVEL_3/exercise_3) |                    |                      |
-|                                            |                    |                      |
-|                                            |                    |                      |
-|                                            |                    |                      |
+| [LEVEl_3/exercise_3](./LEVEL_3/exercise_3) | **CVE-2021-21223** |         mojo         |
+| [LEVEl_3/exercise_4](./LEVEL_3/exercise_4) | **CVE-2021-21207** |       IndexDB        |
+| [LEVEl_3/exercise_5](./LEVEL_3/exercise_5) | **CVE-2021-21202** |      extensions      |
 |                                            |                    |                      |
 |                                            |                    |                      |
 
