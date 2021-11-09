@@ -52,7 +52,7 @@ The learning path is divided into three steps:
 | [LEVEl_3/exercise_4](./LEVEL_3/exercise_4) | **CVE-2021-21207** |       IndexDB        |
 | [LEVEl_3/exercise_5](./LEVEL_3/exercise_5) | **CVE-2021-21202** |      extensions      |
 | [LEVEl_3/exercise_6](./LEVEL_3/exercise_6) | **CVE-2021-21198** |         IPC          |
-|                                            |                    |                      |
+| [LEVEl_3/exercise_6](./LEVEL_3/exercise_7) | **CVE-2021-21155** |         Tab          |
 
 
 
