@@ -1,4 +1,4 @@
-# Exercise 5
+# Exercise 7
 
 In LEVEL 1, we can relay on Details and just to search for the func which Details mentioned. It is far away from the real bug hunting scene.
 
