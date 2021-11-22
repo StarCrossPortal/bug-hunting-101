@@ -31,12 +31,12 @@ git reset --hard 13aa7b32816e52bf1242d073ada2c892798190e7
 
 ### Related code
 
-[third_party/blink/renderer/modules/compression/deflate_transformer.cc](https://chromium.googlesource.com/chromium/src.git/+/13aa7b32816e52bf1242d073ada2c892798190e7/third_party/blink/renderer/modules/compression/deflate_transformer.cc)
-[third_party/blink/renderer/modules/compression/inflate_transformer.cc](https://chromium.googlesource.com/chromium/src.git/+/13aa7b32816e52bf1242d073ada2c892798190e7/third_party/blink/renderer/modules/compression/inflate_transformer.cc)
+[third_party/blink/renderer/modules/compression/deflate_transformer.cc](https://source.chromium.org/chromium/chromium/src/+/13aa7b32816e52bf1242d073ada2c892798190e7:third_party/blink/renderer/modules/compression/deflate_transformer.cc)
+[third_party/blink/renderer/modules/compression/inflate_transformer.cc](https://source.chromium.org/chromium/chromium/src/+/13aa7b32816e52bf1242d073ada2c892798190e7:third_party/blink/renderer/modules/compression/inflate_transformer.cc)
 
 You can read this [doc](https://docs.google.com/document/d/1TovyqqeC3HoO0A4UUBKiCyhZlQSl7jM_F7KbWjK2Gcs/edit)  and [this](https://github.com/WICG/compression/blob/main/explainer.md) to get some info about `CompressionStreams` in chrome
 
-Read comment of [third_party/zlib/zlib.h](https://chromium.googlesource.com/chromium/src.git/+/13aa7b32816e52bf1242d073ada2c892798190e7/third_party/zlib/zlib.h) to get detailed about `deflate` or `inflate`
+Read comment of [third_party/zlib/zlib.h](https://source.chromium.org/chromium/chromium/src/+/13aa7b32816e52bf1242d073ada2c892798190e7:third_party/zlib/zlib.h) to get detailed about `deflate` or `inflate`
 
 <details>
   <summary>If you find not release operation, you can get some tips here</summary>

@@ -31,7 +31,7 @@ git reset --hard 978994829edb17b9583ab7a6a8b001a5b9dab04e
 
 ### Related code
 
-[src/third_party/blink/renderer/core/editing/visible_units.cc](https://chromium.googlesource.com/chromium/src/+/978994829edb17b9583ab7a6a8b001a5b9dab04e/third_party/blink/renderer/core/editing/visible_units.cc)
+[src/third_party/blink/renderer/core/editing/visible_units.cc](https://source.chromium.org/chromium/chromium/src/+/978994829edb17b9583ab7a6a8b001a5b9dab04e:third_party/blink/renderer/core/editing/visible_units.cc)
 You'd better read some introduce for [DOM](https://chromium.googlesource.com/chromium/src/+/8689d5f68d3ce081fb0b81230a4f316c03221418/third_party/blink/renderer/core/dom/#dom) and [layout](https://chromium.googlesource.com/chromium/src/+/8689d5f68d3ce081fb0b81230a4f316c03221418/third_party/blink/renderer/core/layout/#blink-layout) in chrome
 
 tips: CanContainRange[xxxxxxxx]() is virtual func, you can find all its def carefully for the true one.
@@ -44,7 +44,7 @@ Do this exercise by yourself, If you find my answer have something wrong, please
 <details>
   <summary>My answer</summary>
   
-  At first, I analysis the [patched file](https://chromium.googlesource.com/chromium/src/+/978994829edb17b9583ab7a6a8b001a5b9dab04e/third_party/blink/renderer/core/layout/hit_test_result.cc), but have no idea about the bug, so I see more about this cve at issue website. I notice that it was found by [Grammarinator fuzzer](https://github.com/renatahodovan/grammarinator), and when I want to use this fuzzer to continue this analysis, the usage can't run properly at my local. I don't make much time on environment or it's usage, because I don't think I can do the same as the author of this fuzzer in just two days :/
+  At first, I analysis the [patched file](https://source.chromium.org/chromium/chromium/src/+/978994829edb17b9583ab7a6a8b001a5b9dab04e:third_party/blink/renderer/core/layout/hit_test_result.cc), but have no idea about the bug, so I see more about this cve at issue website. I notice that it was found by [Grammarinator fuzzer](https://github.com/renatahodovan/grammarinator), and when I want to use this fuzzer to continue this analysis, the usage can't run properly at my local. I don't make much time on environment or it's usage, because I don't think I can do the same as the author of this fuzzer in just two days :/
 
   Some bug found by fuzzer are difficult to find by analysis the source files, so I want continue this work with the help of break trace which author [pasted](https://bugs.chromium.org/p/chromium/issues/detail?id=1162131).
   

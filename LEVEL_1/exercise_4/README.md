@@ -40,7 +40,7 @@ Because the hash we get from issue page is related to chromium, we need download
 The hash [`6c3c857b90ef63822c8e598bdb7aea604ba1688c`](https://github.com/chromium/chromium/tree/6c3c857b90ef63822c8e598bdb7aea604ba1688c/third_party/blink)
 
 ### Related code
-we can analysis the source file [online](https://chromium.googlesource.com/chromium/src/+/6c3c857b90ef63822c8e598bdb7aea604ba1688c/third_party/blink/renderer/core/scroll/mac_scrollbar_animator_impl.mm#414) or offline.
+we can analysis the source file [online](https://source.chromium.org/chromium/chromium/src/+/6c3c857b90ef63822c8e598bdb7aea604ba1688c:third_party/blink/renderer/core/scroll/mac_scrollbar_animator_impl.mm#414) or offline.
 
 ```objective-c
 class BlinkScrollbarPartAnimationTimer {

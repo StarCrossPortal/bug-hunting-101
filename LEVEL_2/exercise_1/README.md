@@ -32,7 +32,7 @@ git reset --hard 04fe9cc9bf0b67233b9f7f80b9a914499a431fa4
 
 ### Related code
 
-[third_party/blink/renderer/core/editing/iterators/text_searcher_icu.cc](https://chromium.googlesource.com/chromium/src/+/04fe9cc9bf0b67233b9f7f80b9a914499a431fa4/third_party/blink/renderer/core/editing/iterators/text_searcher_icu.cc)
+[third_party/blink/renderer/core/editing/iterators/text_searcher_icu.cc](https://source.chromium.org/chromium/chromium/src/+/04fe9cc9bf0b67233b9f7f80b9a914499a431fa4:third_party/blink/renderer/core/editing/iterators/text_searcher_icu.cc)
 
 
 ### Do it

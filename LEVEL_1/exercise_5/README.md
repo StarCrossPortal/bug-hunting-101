@@ -44,7 +44,7 @@ git reset --hard 7e5707cc5f46b0155b9e42b121c8e2128c05f178
 ### Related code
 we can analysis the source file [online](https://chromium.googlesource.com/chromium/src/+/af77c20371d1418300cefbc5fa6779067b7792cf/third_party/blink/renderer/core/animation/css_interpolation_types_map.cc) or offline.
 
-This time you need to analysis entire file [`third_party/blink/renderer/core/animation/css_interpolation_types_map.cc`](https://chromium.googlesource.com/chromium/src/+/af77c20371d1418300cefbc5fa6779067b7792cf/third_party/blink/renderer/core/animation/css_interpolation_types_map.cc), this bug can be easily found if you read `Details` carefully ;)
+This time you need to analysis entire file [`third_party/blink/renderer/core/animation/css_interpolation_types_map.cc`](https://source.chromium.org/chromium/chromium/src/+/af77c20371d1418300cefbc5fa6779067b7792cf:third_party/blink/renderer/core/animation/css_interpolation_types_map.cc), this bug can be easily found if you read `Details` carefully ;)
 
 ### Do it
 Do this exercise by yourself, If you find my answer have something wrong, please correct it.

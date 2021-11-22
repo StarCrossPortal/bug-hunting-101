@@ -31,7 +31,7 @@ git reset --hard e382f185aaee6d4f4a5f8762f1a1ae89bcc0d046
 
 ### Related code
 
-[chrome/browser/ui/tabs/tab_strip_model.cc](https://crrev.com/e382f185aaee6d4f4a5f8762f1a1ae89bcc0d046/chrome/browser/ui/tabs/tab_strip_model.cc)
+[chrome/browser/ui/tabs/tab_strip_model.cc](https://source.chromium.org/chromium/chromium/src/+/e382f185aaee6d4f4a5f8762f1a1ae89bcc0d046:chrome/browser/ui/tabs/tab_strip_model.cc)
 
 This time we analysis [`tab`](https://www.chromium.org/user-experience/tabs), a module of chrome. You can read [this](https://www.chromium.org/developers/design-documents/tab-strip-mac) to get info of `tab strip`.
 

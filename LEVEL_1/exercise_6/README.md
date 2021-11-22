@@ -40,7 +40,7 @@ git reset --hard 710bae69e18a9b086795cf79d849bd7f6e9c97fa
 ```
 
 ### Related code
-[`third_party/blink/renderer/core/animation/animatable.cc`](https://chromium.googlesource.com/chromium/src/+/db032cf0a96b0e7e1007f181d8ce21e39617cee7/third_party/blink/renderer/core/animation/animatable.cc) and others
+[`third_party/blink/renderer/core/animation/animatable.cc`](https://source.chromium.org/chromium/chromium/src/+/db032cf0a96b0e7e1007f181d8ce21e39617cee7:third_party/blink/renderer/core/animation/animatable.cc) and others
 
 
 
