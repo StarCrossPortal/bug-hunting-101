@@ -2,7 +2,7 @@
 
 
 ## CVE-2021-30565
-I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
+I sugget you don't search any report about it to prevents get too much info like patch.
 
 
 ### Details
@@ -110,7 +110,7 @@ void MarkingStateBase::ProcessEphemeron(const void* key, const void* value,
 ```
 
 ### Do it
-Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
+Do this exercise by yourself, If you find my answer have something wrong, please correct it.
 
 
 ---------

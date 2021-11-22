@@ -7,7 +7,7 @@ LEVEL 2 we do the same as LEVEL 1 without the help of Details.
 But the bug report need Poc to assist developer reproduce the vulnerability, and know exactly what cause this bug. So LEVEL 3 need we construct Poc by ourselves.
 
 ## CVE-2021-21223
-I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
+I sugget you don't search any report about it to prevents get too much info like patch.
 
 
 
@@ -47,7 +47,7 @@ read this [design doc](https://chromium.googlesource.com/chromium/src/+/6740adb2
 
 
 ### Do it
-Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
+Do this exercise by yourself, If you find my answer have something wrong, please correct it.
 
 
 ---------

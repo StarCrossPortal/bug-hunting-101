@@ -56,7 +56,7 @@ About TabDragController:
 ```
 
 ### Do it
-Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
+Do this exercise by yourself, If you find my answer have something wrong, please correct it.
 
 
 ---------

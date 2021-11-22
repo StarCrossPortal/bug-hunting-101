@@ -3,8 +3,7 @@
 In LEVEL 1, we can relay on Details and just to search for the func which Details mentioned. It is far away from the real bug hunting scene. therefore in LEVEL 2 we do the same as LEVEL 1 without the help of Details.
 
 ## CVE-2020-6422
-I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
-
+I sugget you don't search any report about it to prevents get too much info like patch.
 
 
 ### Details
@@ -40,7 +39,7 @@ tips: Not all delete operation set `var` null. In some cases we need save the de
 The bug is in the last quarter of the source code.
 
 ### Do it
-Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
+Do this exercise by yourself, If you find my answer have something wrong, please correct it.
 
 
 ---------

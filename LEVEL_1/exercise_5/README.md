@@ -1,7 +1,7 @@
 # Exercise 5
 
 ##  CVE-2021-21203
-I sugget you don't search any report about it to prevents get too much info like patch. Our goal is to find some bugs, not construct Poc. But in truth, Poc can proof that we are right.
+I sugget you don't search any report about it to prevents get too much info like patch.
 
 This time we do it by code audit
 
@@ -47,7 +47,7 @@ we can analysis the source file [online](https://chromium.googlesource.com/chrom
 This time you need to analysis entire file [`third_party/blink/renderer/core/animation/css_interpolation_types_map.cc`](https://chromium.googlesource.com/chromium/src/+/af77c20371d1418300cefbc5fa6779067b7792cf/third_party/blink/renderer/core/animation/css_interpolation_types_map.cc), this bug can be easily found if you read `Details` carefully ;)
 
 ### Do it
-Do this exercise by yourself, when you have some idea, you can compare your answer with me. If you find my answer have something wrong, please tell me.
+Do this exercise by yourself, If you find my answer have something wrong, please correct it.
 
 
 ---------
