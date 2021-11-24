@@ -1,18 +1,25 @@
 # bug-hunting-101
 
-## What it about
-As a freshman in bug hunting, I write these to exercise bug hunting skill.
+## What is this?
 
+This repository is to help new-comers (like ourselves) of binary bug huting area to improve their skills.
 
+Currently, the gap between CTF and real world bug hunting can be quite huge.
+And this repository is our attempt to solve that problem by porting the real world bug hunting to small exercises.
 
+CVEs are selected out and setup in a certain scene, your goal is to repeat the process of finding such vulnerabilities out.
 
-## What will I do
-The learning path is divided into three steps:
-- In level 1, I will try to "rediscover" some cve without patch, this means I will search some cve report, just like [this](https://talosintelligence.com/vulnerability_reports/TALOS-2020-1127). And try to find the vulnerability with the help of "Details" which explain what is this cve about. It just like do ctf challenges, I guess it can be easy for you ;) 
-- In level 2, I will replay level 1 without "Details". But in order to narrow down, I need know which part of the project exist this bug, for example, if the bug exist in ANGEL (one module of Chromium), I need some info about which file I need analysis. Most of the time, the path of the patch file can help me achieve this goal.
-- Level 3, I will do as level 2 and construct Poc and exp(optional).
+## Intro
 
+We have prepared 3 levels.
+Each level provides excersises with different difficulties:
 
+- Level 1: Details of the CVEs are provided to help you from "re-discovering" the original vulnerability. Reports like [this](https://talosintelligence.com/vulnerability_reports/TALOS-2020-1127) are provided.
+So this should be the easiest level.
+- Level 2: the details will be emitted. But to narrow down, information about which part of the project contains such vulnerability will be provided. For example, if the bug is about ANGEL (module of the Chromium project),
+the information about the file will be provided.
+Most of the time, the path to the patch file should help that.
+- Level 3: quite like level 2, but need PoC and exploit (optional)
 
 
 ## LEVEL 1
@@ -55,7 +62,10 @@ The learning path is divided into three steps:
 | [LEVEl_3/exercise_7](./LEVEL_3/exercise_7) | **CVE-2021-21155** |         Tab          |
 
 
+## Original Author
 
+- [ddme](https://github.com/ret2ddme)
+- [lime](https://github.com/Limesss)
 
 
 ## How to contribute
