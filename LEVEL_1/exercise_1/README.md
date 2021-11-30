@@ -3,8 +3,6 @@
 ## CVE-2020-6542
 I choose **CVE-2020-6542**, and I sugget you don't search any report about it to prevents get too much info like patch.
 
-In order to reduce the difficulty of setting up the environment, we do it by code auditing.
-
 
 ### Details
 
@@ -21,6 +19,8 @@ In order to reduce the difficulty of setting up the environment, we do it by cod
    Chromium crashes inside the `Buffer11::getBufferStorage` function. This is because newStorage element points to previously freed memory, leading to a use-after-free vulnerability.
 </details>
 
+**You'd better read some doc about ANGLE to understand the source code**
+
 --------
 
 ### Version
@@ -33,6 +33,12 @@ we can analysis the source file [online](https://chromium.googlesource.com/angle
 
 ### Related code
 
+May be you need fetch the source code
+```
+git clone https://chromium.googlesource.com/angle/angle
+cd angle
+git reset --hard 50a2725742948702720232ba46be3c1f03822ada
+```
 ```c++
 angle::Result VertexArray11::updateDirtyAttribs(const gl::Context *context,
                                                 const gl::AttributesMask &activeDirtyAttribs)
@@ -119,7 +125,7 @@ angle::Result VertexDataManager::StoreStaticAttrib(const gl::Context *context,
     const uint8_t *sourceData = nullptr;
     const int offset          = static_cast<int>(ComputeVertexAttributeOffset(attrib, binding));
 
-    ANGLE_TRY(bufferD3D->getData(context, &sourceData));   // call Buffer11::getData
+    ANGLE_TRY(bufferD3D->getData(context, &sourceData));
 
     if (sourceData)
     {
@@ -140,7 +146,7 @@ angle::Result Buffer11::getData(const gl::Context *context, const uint8_t **outD
     }
 
     SystemMemoryStorage *systemMemoryStorage = nullptr;
-  	// call getBufferStorage
+  	
     ANGLE_TRY(getBufferStorage(context, BUFFER_USAGE_SYSTEM_MEMORY, &systemMemoryStorage));
 
     ASSERT(systemMemoryStorage->getSize() >= mSize);
@@ -182,13 +188,6 @@ angle::Result Buffer11::getBufferStorage(const gl::Context *context,
 }
 ```
 
-```c++
-call trace:
-VertexArray11::updateDirtyAttribs ->
-  VertexDataManager::StoreStaticAttrib ->
-  	Buffer11::getData ->  // maybe we needn't call getBufferStorage
-  		Buffer11::getBufferStorage
-```
 
 ### Do it
 
@@ -198,6 +197,36 @@ Do this exercise by yourself, If you find my answer have something wrong, please
 <details>
   <summary>My answer</summary>
 
+  The answer I write is incomplete, the following answer doesn't mention the reletion between patch and uaf -_-. Recently I have no time to debug PoC to get the truely answer. So I hope you can correct this.
+
+  patch:
+  ```diff
+diff --git a/src/libANGLE/renderer/d3d/d3d11/VertexArray11.cpp b/src/libANGLE/renderer/d3d/d3d11/VertexArray11.cpp
+index 6bb0bf8..a5f8b6a 100644
+--- a/src/libANGLE/renderer/d3d/d3d11/VertexArray11.cpp
++++ b/src/libANGLE/renderer/d3d/d3d11/VertexArray11.cpp
+@@ -253,8 +253,6 @@
+ 
+     for (size_t dirtyAttribIndex : activeDirtyAttribs)
+     {
+-        mAttribsToTranslate.reset(dirtyAttribIndex);
+-
+         auto *translatedAttrib   = &mTranslatedAttribs[dirtyAttribIndex];
+         const auto &currentValue = glState.getVertexAttribCurrentValue(dirtyAttribIndex);
+ 
+@@ -282,6 +280,9 @@
+                 UNREACHABLE();
+                 break;
+         }
++
++        // Make sure we reset the dirty bit after the switch because STATIC can early exit.
++        mAttribsToTranslate.reset(dirtyAttribIndex);
+     }
+ 
+     return angle::Result::Continue;
+  ```
+  doc about [dirty bits](https://chromium.googlesource.com/angle/angle/+/50a2725742948702720232ba46be3c1f03822ada/doc/DirtyBits.md)
+  
   ```c++
     angle::Result Buffer11::getData(const gl::Context *context, const uint8_t **outData)
     {
@@ -210,7 +239,8 @@ Do this exercise by yourself, If you find my answer have something wrong, please
         ANGLE_TRY(getBufferStorage(context, BUFFER_USAGE_SYSTEM_MEMORY, &systemMemoryStorage));
     }
   ```
-  [1] `Buffer11::getData` can return return `angle::Result::Stop` if `mSize == 0`
+  incomplete answer:
+  [1] `Buffer11::getData` can return `angle::Result::Stop` if `mSize == 0`
   ```c++
     angle::Result VertexDataManager::StoreStaticAttrib(const gl::Context *context,
                                                     TranslatedAttribute *translated)
@@ -237,6 +267,8 @@ Do this exercise by yourself, If you find my answer have something wrong, please
     [ ... ]
   ```
   [2] call `Buffer11::getData` in `ANGLE_TRY`, because `mSize == 0` it can return `Stop` then exit early. Finally call `Buffer11::~Buffer11()`, it can free `mBufferStorages`.
+  
+  One possible situation (maybe wrong) is we can get the raw buffer early because the "early exit", and the `Buffer11::~Buffer11()` have not been trigger. I can call `getBufferStorage` in other path during `~Buffer11()` before `mBufferStorages[usage]` was set to null.
   ```c++
     template <typename StorageOutT>
     angle::Result Buffer11::getBufferStorage(const gl::Context *context,
