@@ -1,6 +1,6 @@
 # Exercise 2
 
-## CVE-2020-6542
+## CVE-2020-6463
 I sugget you don't search any report about it to prevents get too much info like patch.
 
 This time we do it by code audit, and download source code.

@@ -26,7 +26,7 @@ Most of the time, the path to the patch file should help that.
 |                Exercise No.                |        CVEs        |    Target    |
 | :----------------------------------------: | :----------------: | :----------: |
 | [LEVEl_1/exercise_1](./LEVEL_1/exercise_1) | **CVE-2020-6542**  | Chrome WebGL |
-| [LEVEl_1/exercise_2](./LEVEL_1/exercise_2) | **CVE-2020-6542**  | Chrome ANGLE |
+| [LEVEl_1/exercise_2](./LEVEL_1/exercise_2) | **CVE-2020-6463**  | Chrome ANGLE |
 | [LEVEl_1/exercise_3](./LEVEL_1/exercise_3) | **CVE-2020-16005** |    ANGLE     |
 | [LEVEl_1/exercise_4](./LEVEL_1/exercise_4) | **CVE-2021-21204** | Chrome Blink |
 | [LEVEl_1/exercise_5](./LEVEL_1/exercise_5) | **CVE-2021-21203** |    Blink     |
