@@ -2,7 +2,7 @@
 
 ## What is this?
 
-This repository is to help new-comers (like ourselves) of binary bug huting area to improve their skills.
+This repository is to help new-comers (like ourselves) of binary bug hunting area to improve their skills.
 
 Currently, the gap between CTF and real world bug hunting can be quite huge.
 And this repository is our attempt to solve that problem by porting the real world bug hunting to small exercises.
